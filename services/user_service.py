@@ -9,6 +9,14 @@ from custom_exceptions.user_exceptions import (
 import bcrypt
 import re
 import uuid
+from datetime import datetime, timedelta,UTC
+from jose import jwt
+
+SECRET_KEY = "your_very_secret_key" 
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 
+def decode_access_token(token: str):
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
 
 class UserServiceProtocol(Protocol):
@@ -18,14 +26,11 @@ class UserServiceProtocol(Protocol):
     def get_user_by_mail(self, user) -> Optional[User]:
         pass
 
-    def login(self, email, password) -> Optional[User]:
+    def login(self, email, password) -> str:
         pass
 
-    def signup(self) -> Optional[User]:
+    def signup(self) -> str:
         pass
-
-
-# what dshould i pass while signup
 
 
 class UserService:
@@ -44,7 +49,7 @@ class UserService:
             raise UserNotFoundError(f"User not found with mail {mail}")
         return user
 
-    def login(self, email: str, password: str) -> User:
+    def login(self, email: str, password: str) -> str:
         user = self.get_user_by_mail(email)
 
         if not bcrypt.checkpw(
@@ -53,18 +58,19 @@ class UserService:
         ):
             raise IncorrectCredentials("Invalid email or password")
 
-        return user
+        return self._create_jwt(user.user_id,email,user.role)
 
-    def signup(self, email: str, username: str, password: str, phone: int) -> User:
+    def signup(self, email: str, username: str, password: str, phone: int) -> str:
         self._is_email_valid(email)
         self._is_password_valid(password)
         self._is_number_valid(phone)
 
         hashed = self._hash_password(password)
+        user_id=str(uuid.uuid4())
 
-        return self.user_repo.add_user(
+        self.user_repo.add_user(
             User(
-                user_id=str(uuid.uuid4()),
+                user_id=user_id,
                 username=username,
                 email=email,
                 phone_number=phone,
@@ -73,6 +79,7 @@ class UserService:
                 is_blocked=False,
             )
         )
+        return self._create_jwt(user_id,email,"customer")
 
     def _is_number_valid(self, phone_number: int):
         s = str(phone_number)
@@ -99,3 +106,13 @@ class UserService:
         user = self.get_user_by_mail(email)
         if user:
             raise UserAlreadyExists("email is already in use")
+        
+    def _create_jwt(user_id: str, email: str, role: str):
+        payload = {
+            "user_id": user_id,
+            "email": email,
+            "role": role,
+            "exp": datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        return token

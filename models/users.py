@@ -27,3 +27,4 @@ class UserDTO:
     phone_number: str
     role: Role
     is_blocked: bool
+

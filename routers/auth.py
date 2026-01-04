@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from schemas.auth import UserResponse, SignupRequest, LoginRequest
+from schemas.response import APIResponse
 from services.user_service import UserService
 from dependencies import get_user_service
 from custom_exceptions.user_exceptions import (
@@ -20,13 +21,13 @@ def signup(
     service: UserService = Depends(get_user_service),
 ):
     try:
-        user = service.signup(
+        token = service.signup(
             email=payload.email,
             username=payload.username,
             password=payload.password,
             phone=payload.phone,
         )
-        return UserResponse.from_domain(user)
+        return APIResponse(status_code=200,message="signup successful",data=token)
 
     except ValueError as e:
         raise HTTPException(
@@ -41,11 +42,11 @@ def login(
     service: UserService = Depends(get_user_service),
 ):
     try:
-        user = service.login(
+        token = service.login(
             email=payload.email,
             password=payload.password,
         )
-        return UserResponse.from_domain(user)
+        return APIResponse(status_code=200,message="login successful",data=token)
 
     except (UserNotFoundError, IncorrectCredentials):
         raise HTTPException(
