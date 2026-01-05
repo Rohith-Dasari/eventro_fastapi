@@ -26,33 +26,29 @@ class ArtistRepository:
 
     def batch_get_by_ids(self, artist_ids: List[str]) -> Dict[str, Artist]:
         keys = [
-            {
-                "pk": {"S": f"ARTIST#{aid}"},
-                "sk": {"S": "DETAILS"},
+                    {
+                        "pk": f"ARTIST#{aid}",
+                        "sk": "DETAILS",
+                    }
+                    for aid in artist_ids
+                ]
+        request_items = {
+            self.table.name: {
+                "Keys": keys
             }
-            for aid in artist_ids
-        ]
-
-        request = {self.table.name: {"Keys": keys}}
-
+        }
         artists: Dict[str, Artist] = {}
-        unprocessed = request
+        resp = self.client.batch_get_item(RequestItems=request_items)
+        items = resp["Responses"].get(self.table.name, [])
+        for item in items:
+            artist_id = item["pk"].replace("ARTIST#", "")
+            artists[artist_id] = Artist(
+                id=artist_id,
+                name=item["name"],
+                bio=item.get("bio", {}),
+            )
 
-        while unprocessed:
-            resp = self.client.batch_get_item(RequestItems=unprocessed)
 
-            items = resp["Responses"].get(self.table.name, [])
-            for item in items:
-                artist_id = item["pk"]["S"].replace("ARTIST#", "")
-                artists[artist_id] = Artist(
-                    id=artist_id,
-                    name=item["name"]["S"],
-                    bio=item.get("bio", {}).get("S"),
-                )
-
-            unprocessed = resp.get("UnprocessedKeys")
-            if unprocessed:
-                time.sleep(0.05)
 
         return artists
 

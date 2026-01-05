@@ -5,7 +5,7 @@ import logging
 from types_boto3_dynamodb.service_resource import Table
 from types_boto3_dynamodb import DynamoDBClient
 from typing import Optional,List
-from boto3.dynamodb.types import TypeSerializer
+from boto3.dynamodb.conditions import Key
 
 #update,delete
 
@@ -23,7 +23,6 @@ class EventRepository:
         self.client = client if client else table.meta.client
     
     def add_event(self,event:Event):
-        serializer = TypeSerializer()
         event_item = {
             "pk": f"EVENT#{event.id}",
             "sk": "DETAILS",
@@ -49,20 +48,14 @@ class EventRepository:
             {
                 "Put": {
                     "TableName": self.table.name,
-                    "Item": {
-                        k: serializer.serialize(v)
-                        for k, v in event_item.items()
-                    },
+                    "Item": event_item,
                     "ConditionExpression": "attribute_not_exists(pk)",
                 }
             },
             {
                 "Put": {
                     "TableName": self.table.name,
-                    "Item": {
-                        k: serializer.serialize(v)
-                        for k, v in name_index_item.items()
-                    },
+                    "Item": name_index_item,
                 }
             },
         ]
@@ -92,14 +85,11 @@ class EventRepository:
             artist_ids=item.get("artist_ids", []),
             artist_names=item.get("artist_names", []),
         )
+        
     def get_events_by_name(self, name: str) -> List[Event]:
         prefix = f"EVENT_NAME#{name}#"
         resp = self.table.query(
-            KeyConditionExpression="pk = :pk AND begins_with(sk, :prefix)",
-            ExpressionAttributeValues={
-                ":pk": "EVENTS",
-                ":prefix": prefix,
-            },
+            KeyConditionExpression=Key("pk").eq("EVENTS") & Key("sk").begins_with(prefix),
         )
 
         items = resp.get("Items", [])
