@@ -9,14 +9,9 @@ from custom_exceptions.user_exceptions import (
 import bcrypt
 import re
 import uuid
-from datetime import datetime, timedelta,UTC
-from jose import jwt
+from utils.jwt_service import create_jwt
 
-SECRET_KEY = "your_very_secret_key" 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 
-def decode_access_token(token: str):
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$")
 
 
 class UserServiceProtocol(Protocol):
@@ -58,15 +53,15 @@ class UserService:
         ):
             raise IncorrectCredentials("Invalid email or password")
 
-        return self._create_jwt(user.user_id,email,user.role)
+        return create_jwt(user.user_id, email, user.role.value)
 
-    def signup(self, email: str, username: str, password: str, phone: int) -> str:
+    def signup(self, email: str, username: str, password: str, phone: str) -> str:
         self._is_email_valid(email)
         self._is_password_valid(password)
         self._is_number_valid(phone)
 
         hashed = self._hash_password(password)
-        user_id=str(uuid.uuid4())
+        user_id = str(uuid.uuid4())
 
         self.user_repo.add_user(
             User(
@@ -79,22 +74,18 @@ class UserService:
                 is_blocked=False,
             )
         )
-        return self._create_jwt(user_id,email,"customer")
+        return create_jwt(user_id, email, Role.CUSTOMER.value)
 
-    def _is_number_valid(self, phone_number: int):
-        s = str(phone_number)
-        if not s.isdigit() or len(s) != 10:
+    def _is_number_valid(self, phone: str):
+        if not phone.isdigit() or len(phone) != 10:
             raise ValueError("Invalid phone number")
 
     def _is_password_valid(self, password: str):
-        if len(password) < 12:
-            raise ValueError("Password must be at least 12 characters")
-        if not any(c.isupper() for c in password):
-            raise ValueError("Password must contain uppercase letter")
-        if not any(c.islower() for c in password):
-            raise ValueError("Password must contain lowercase letter")
-        if not any(c.isdigit() for c in password):
-            raise ValueError("Password must contain digit")
+        if not PASSWORD_REGEX.fullmatch(password):
+            raise ValueError(
+                "Password must be at least 12 characters long and contain "
+                "uppercase, lowercase, digit, and special character"
+            )
 
     def _hash_password(self, password: str) -> str:
         return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -103,16 +94,6 @@ class UserService:
         pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         if not re.match(pattern, email):
             raise ValueError("Invalid email format")
-        user = self.get_user_by_mail(email)
+        user = self.user_repo.get_by_mail(mail=email)
         if user:
             raise UserAlreadyExists("email is already in use")
-        
-    def _create_jwt(user_id: str, email: str, role: str):
-        payload = {
-            "user_id": user_id,
-            "email": email,
-            "role": role,
-            "exp": datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        }
-        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-        return token

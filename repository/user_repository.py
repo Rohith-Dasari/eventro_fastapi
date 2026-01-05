@@ -1,29 +1,15 @@
-from abc import ABC, abstractmethod
 from models.users import User, Role
 from botocore.exceptions import ClientError
 import logging
 from types_boto3_dynamodb.service_resource import Table
 from types_boto3_dynamodb import DynamoDBClient
 from typing import Optional
+from boto3.dynamodb.conditions import Key
 
 logger = logging.getLogger(__name__)
 
 
-class UserRepository(ABC):
-    @abstractmethod
-    def add_user(self, user: User) -> Optional[User]:
-        pass
-
-    @abstractmethod
-    def get_by_mail(self, mail: str) -> Optional[User]:
-        pass
-
-    @abstractmethod
-    def get_by_id(self, user_id: str) -> Optional[User]:
-        pass
-
-
-class UserRepositoryDDB(UserRepository):
+class UserRepository:
     def __init__(self, table: Table, client: DynamoDBClient = None):
         self.table = table
         self.client = client if client else table.meta.client
@@ -71,15 +57,21 @@ class UserRepositoryDDB(UserRepository):
 
     def get_by_mail(self, mail: str) -> Optional[User]:
         try:
-            response = self.table.get_item(Key={"pk": f"EMAIL#{mail}", "sk": f"USER#"})
-
+            response = self.table.query(
+                KeyConditionExpression=(
+                    Key("pk").eq(f"EMAIL#{mail}") & Key("sk").begins_with("USER#")
+                )
+            )
         except ClientError as err:
-            logger.error("Error retrieving user by mail %s: %s", mail, err)
+            logger.error(f"Error retrieving user by mail {mail}: {err}")
             raise
 
-        item = response.get("Item")
-        if not item:
+        items = response.get("Items", [])
+        if not items:
             return None
+
+        # Assuming there’s at most one user with this email
+        item = items[0]
         user_id = item["sk"].split("#", 1)[1]
         return self.get_by_id(user_id=user_id)
 
@@ -89,7 +81,9 @@ class UserRepositoryDDB(UserRepository):
                 Key={"pk": f"USER#{user_id}", "sk": "DETAILS"}
             )
         except ClientError as err:
+            logger.error(f"Error retrieving user by id {user_id}: {err}")
             raise
+
         item = response.get("Item")
         if not item:
             return None

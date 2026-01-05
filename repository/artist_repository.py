@@ -1,21 +1,18 @@
 from typing import Optional
-from models import Artist
-from typing import Dict,List,Optional
+from models.artists import Artist
+from typing import Dict, List, Optional
 import time
+from types_boto3_dynamodb.service_resource import Table
+from botocore.exceptions import ClientError
+
 
 class ArtistRepository:
-    def __init__(self, table, client=None):
+    def __init__(self, table: Table, client=None):
         self.table = table
         self.client = client or table.meta.client
 
     def get_by_id(self, artist_id: str) -> Optional[Artist]:
-        resp = self.client.get_item(
-            TableName=self.table.name,
-            Key={
-                "pk": {"S": f"ARTIST#{artist_id}"},
-                "sk": {"S": "DETAILS"},
-            },
-        )
+        resp = self.table.get_item(Key={"pk": f"ARTIST#{artist_id}", "sk": "DETAILS"})
 
         item = resp.get("Item")
         if not item:
@@ -23,10 +20,10 @@ class ArtistRepository:
 
         return Artist(
             id=artist_id,
-            name=item["name"]["S"],
-            bio=item.get("bio", {}).get("S"),
+            name=item["name"],
+            bio=item.get("bio"),
         )
-        
+
     def batch_get_by_ids(self, artist_ids: List[str]) -> Dict[str, Artist]:
         keys = [
             {
@@ -36,19 +33,13 @@ class ArtistRepository:
             for aid in artist_ids
         ]
 
-        request = {
-            self.table.name: {
-                "Keys": keys
-            }
-        }
+        request = {self.table.name: {"Keys": keys}}
 
         artists: Dict[str, Artist] = {}
         unprocessed = request
 
         while unprocessed:
-            resp = self.client.batch_get_item(
-                RequestItems=unprocessed
-            )
+            resp = self.client.batch_get_item(RequestItems=unprocessed)
 
             items = resp["Responses"].get(self.table.name, [])
             for item in items:
@@ -61,7 +52,20 @@ class ArtistRepository:
 
             unprocessed = resp.get("UnprocessedKeys")
             if unprocessed:
-                time.sleep(0.05) 
+                time.sleep(0.05)
 
         return artists
 
+    def add_artist(self, artist: Artist) -> Artist:
+        try:
+            self.table.put_item(
+                Item={
+                    "pk": f"ARTIST#{artist.id}",
+                    "sk": "DETAILS",
+                    "name": artist.name,
+                    "bio": artist.bio,
+                },
+            )
+        except ClientError as e:
+            raise
+        return artist

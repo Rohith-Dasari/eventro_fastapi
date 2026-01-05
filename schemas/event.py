@@ -8,4 +8,4 @@ class CreateEventRequest(BaseModel):
     description: str = Field(..., min_length=1)
     duration: int = Field(..., gt=0, description="Duration in minutes")
     category: Category
-    artist_ids: List[str] = Field(..., min_length=1)
+    artist_ids: List[str] = Field(..., min_length=1, alias="artists")
