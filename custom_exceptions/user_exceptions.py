@@ -1,10 +1,10 @@
-class UserNotFoundError(BaseException):
+class UserNotFoundError(Exception):
     pass
 
 
-class IncorrectCredentials(BaseException):
+class IncorrectCredentials(Exception):
     pass
 
 
-class UserAlreadyExists(BaseException):
+class UserAlreadyExists(Exception):
     pass

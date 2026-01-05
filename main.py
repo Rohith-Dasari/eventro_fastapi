@@ -10,6 +10,7 @@ from custom_exceptions.user_exceptions import (
     IncorrectCredentials,
 )
 from custom_exceptions.artist_exceptions import InvalidArtistID
+from custom_exceptions.event_exceptions import EventNotFound
 from botocore.exceptions import ClientError
 
 app = FastAPI()
@@ -28,6 +29,17 @@ def http_exception_handler(request: Request, exc: HTTPException):
             "message": exc.detail,
         },
     )
+
+@app.exception_handler(EventNotFound)
+def http_exception_handler(request: Request, exc: EventNotFound):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "status_code": exc.status_code,
+            "message": str(exc),
+        },
+    )
+
 
 
 @app.exception_handler(RequestValidationError)
@@ -63,56 +75,56 @@ def value_error_handler(request: Request, exc: InvalidArtistID):
     )
 
 
-# @app.exception_handler(UserNotFoundError)
-# def user_not_found_handler(request: Request, exc: UserNotFoundError):
-#     return JSONResponse(
-#         status_code=404,
-#         content={
-#             "status_code": 404,
-#             "message": str(exc),
-#         },
-#     )
+@app.exception_handler(UserNotFoundError)
+def user_not_found_handler(request: Request, exc: UserNotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "status_code": 404,
+            "message": str(exc),
+        },
+    )
 
 
-# @app.exception_handler(UserAlreadyExists)
-# def user_not_found_handler(request: Request, exc: UserAlreadyExists):
-#     return JSONResponse(
-#         status_code=400,
-#         content={
-#             "status_code": 400,
-#             "message": str(exc),
-#         },
-#     )
+@app.exception_handler(UserAlreadyExists)
+def user_not_found_handler(request: Request, exc: UserAlreadyExists):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "status_code": 400,
+            "message": str(exc),
+        },
+    )
 
 
-# @app.exception_handler(IncorrectCredentials)
-# def user_not_found_handler(request: Request, exc: IncorrectCredentials):
-#     return JSONResponse(
-#         status_code=401,
-#         content={
-#             "status_code": 401,
-#             "message": str(exc),
-#         },
-#     )
+@app.exception_handler(IncorrectCredentials)
+def user_not_found_handler(request: Request, exc: IncorrectCredentials):
+    return JSONResponse(
+        status_code=401,
+        content={
+            "status_code": 401,
+            "message": str(exc),
+        },
+    )
 
 
-# @app.exception_handler(ClientError)
-# def client_error_handler(request: Request, exc: ClientError):
-#     return JSONResponse(
-#         status_code=500,
-#         content={
-#             "status_code": 500,
-#             "message": str(exc),
-#         },
-#     )
+@app.exception_handler(ClientError)
+def client_error_handler(request: Request, exc: ClientError):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status_code": 500,
+            "message": str(exc),
+        },
+    )
 
 
-# @app.exception_handler(Exception)
-# def unhandled_exception_handler(request: Request, exc: Exception):
-#     return JSONResponse(
-#         status_code=500,
-#         content={
-#             "status_code": 500,
-#             "message": str(exc),
-#         },
-#     )
+@app.exception_handler(Exception)
+def unhandled_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status_code": 500,
+            "message": str(exc),
+        },
+    )

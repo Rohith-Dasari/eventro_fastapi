@@ -1,8 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends,status,Query
 from schemas.event import CreateEventRequest
 from schemas.response import APIResponse
 from services.event_service import EventService
-from custom_exceptions.artist_exceptions import InvalidArtistID
 from dependencies import require_roles, get_event_service
 
 event_router = APIRouter(prefix="/events", tags=["events"])
@@ -35,3 +34,11 @@ async def get_event_by_id(
 ):
     event = event_service.get_event_by_id(event_id)
     return APIResponse(status_code=200, message="successfully retrieved", data=event)
+
+@event_router.get("")
+async def get_event_by_name(
+    name: str = Query(..., min_length=1, description="Event name to search"),
+    event_service: EventService = Depends(get_event_service),
+):
+    events = event_service.get_event_by_name(name)
+    return APIResponse(status_code=200, message="successfully retrieved", data=events)

@@ -59,17 +59,23 @@ class EventRepository:
                 }
             },
         ]
-        self.client.transact_write_items(
-            TransactItems=transact_items
-        )
+        try:
+            self.client.transact_write_items(
+                TransactItems=transact_items
+            )
+        except ClientError as e:
+            raise
         
     def get_by_id(self, event_id: str) -> Optional[Event]:
-        resp = self.table.get_item(
-            Key={
-                "pk": f"EVENT#{event_id}",
-                "sk": "DETAILS"
-            }
-        )
+        try:
+            resp = self.table.get_item(
+                Key={
+                    "pk": f"EVENT#{event_id}",
+                    "sk": "DETAILS"
+                }
+            )
+        except ClientError as e:
+            raise
 
         item = resp.get("Item")
         if not item:
@@ -87,10 +93,13 @@ class EventRepository:
         )
         
     def get_events_by_name(self, name: str) -> List[Event]:
-        prefix = f"EVENT_NAME#{name}#"
-        resp = self.table.query(
-            KeyConditionExpression=Key("pk").eq("EVENTS") & Key("sk").begins_with(prefix),
-        )
+        prefix = f"EVENT_NAME#{name}"
+        try:
+            resp = self.table.query(
+                KeyConditionExpression=Key("pk").eq("EVENTS") & Key("sk").begins_with(prefix),
+            )
+        except ClientError as e:
+            raise
 
         items = resp.get("Items", [])
 

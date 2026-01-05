@@ -47,9 +47,6 @@ class ArtistRepository:
                 name=item["name"],
                 bio=item.get("bio", {}),
             )
-
-
-
         return artists
 
     def add_artist(self, artist: Artist) -> Artist:
