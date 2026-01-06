@@ -70,7 +70,6 @@ class UserRepository:
         if not items:
             return None
 
-        # Assuming there’s at most one user with this email
         item = items[0]
         user_id = item["sk"].split("#", 1)[1]
         return self.get_by_id(user_id=user_id)
