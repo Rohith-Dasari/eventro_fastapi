@@ -1,6 +1,7 @@
 from repository.user_repository import UserRepository
 from repository.event_repository import EventRepository
 from repository.artist_repository import ArtistRepository
+from repository.venue_repository import VenueRepository
 from typing import List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -8,6 +9,7 @@ from utils.jwt_service import decode_access_token
 from services.event_service import EventService
 from services.artist_service import ArtistService
 from services.user_service import UserService
+from services.venue_service import VenuService
 
 from boto3 import resource
 from functools import lru_cache
@@ -34,6 +36,18 @@ def get_event_repo(
     table: Table = Depends(get_dynamodb_table),
 ) -> EventRepository:
     return EventRepository(table=table)
+
+
+def get_venue_repo(
+    table: Table = Depends(get_dynamodb_table),
+) -> VenueRepository:
+    return VenueRepository(table=table)
+
+
+def get_venue_service(
+    venue_repo: VenueRepository = Depends(get_venue_repo),
+) -> VenuService:
+    return VenuService(venue_repo)
 
 
 def get_user_service(
@@ -76,3 +90,4 @@ def require_roles(allowed_roles: List[str]):
         return current_user
 
     return role_checker
+

@@ -17,11 +17,11 @@ class EventService:
         duration: str,
         category: Category,
         artist_ids: list[str],
-    ):
+    ) -> Event:
         artists = self.artist_service.get_artists_batch(artist_ids)
         artist_names = [artist.name for artist in artists]
         event_id = str(uuid.uuid4())
-        event_name=event_name.lower()
+        event_name = event_name.lower()
         event = Event(
             id=event_id,
             name=event_name,
@@ -40,11 +40,9 @@ class EventService:
         if not event:
             raise EventNotFound("invalid event id")
         return event
-    
-    
-    def get_event_by_name(self, event_name:str)->Event:
-        events=self.event_repo.get_events_by_name(event_name)
-        if len(events)==0:
+
+    def get_event_by_name(self, event_name: str) -> Event:
+        events = self.event_repo.get_events_by_name(event_name)
+        if len(events) == 0:
             raise EventNotFound(f"no events found with {event_name}")
         return events
-        

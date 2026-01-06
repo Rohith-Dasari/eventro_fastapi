@@ -11,7 +11,7 @@ def create_jwt(user_id: str, email: str, role: str):
         "user_id": user_id,
         "email": email,
         "role": role,
-        "exp": datetime.now(timezone.UTC)
+        "exp": datetime.now(timezone.utc)
         + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)

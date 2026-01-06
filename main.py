@@ -2,6 +2,9 @@ from fastapi import FastAPI, Request, HTTPException
 from routers.auth import auth_router
 from routers.events import event_router
 from routers.artists import artist_router
+from routers.venues import venue_router
+from routers.host import hosts_router
+
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from custom_exceptions.user_exceptions import (
@@ -18,6 +21,8 @@ app = FastAPI()
 app.include_router(router=auth_router)
 app.include_router(router=event_router)
 app.include_router(router=artist_router)
+app.include_router(router=venue_router)
+app.include_router(router=hosts_router)
 
 
 @app.exception_handler(HTTPException)
@@ -30,6 +35,7 @@ def http_exception_handler(request: Request, exc: HTTPException):
         },
     )
 
+
 @app.exception_handler(EventNotFound)
 def http_exception_handler(request: Request, exc: EventNotFound):
     return JSONResponse(
@@ -39,7 +45,6 @@ def http_exception_handler(request: Request, exc: EventNotFound):
             "message": str(exc),
         },
     )
-
 
 
 @app.exception_handler(RequestValidationError)

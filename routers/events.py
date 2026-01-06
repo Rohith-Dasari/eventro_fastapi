@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends,status,Query
+from fastapi import APIRouter, Depends, status, Query
 from schemas.event import CreateEventRequest
 from schemas.response import APIResponse
 from services.event_service import EventService
-from dependencies import require_roles, get_event_service
+from dependencies import require_roles, get_event_service, get_current_user
 
-event_router = APIRouter(prefix="/events", tags=["events"])
+event_router = APIRouter(
+    prefix="/events", tags=["events"], dependencies=[Depends(get_current_user)]
+)
 
 
-@event_router.post("",status_code=status.HTTP_201_CREATED)
+@event_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_event(
     req: CreateEventRequest,
     current_user: dict = Depends(require_roles(["admin", "host"])),
@@ -34,6 +36,7 @@ async def get_event_by_id(
 ):
     event = event_service.get_event_by_id(event_id)
     return APIResponse(status_code=200, message="successfully retrieved", data=event)
+
 
 @event_router.get("")
 async def get_event_by_name(

@@ -3,7 +3,7 @@ from botocore.exceptions import ClientError
 import logging
 from types_boto3_dynamodb.service_resource import Table
 from types_boto3_dynamodb import DynamoDBClient
-from typing import Optional
+from typing import Optional, List
 from boto3.dynamodb.conditions import Key
 
 
@@ -13,7 +13,6 @@ class VenueRepository:
         self.client = client if client else table.meta.client
 
     def add_venue(self, venue: Venue):
-
         user_item = {
             "pk": f"USER#{venue.host_id}",
             "sk": f"VENUE#{venue.id}",
@@ -21,6 +20,7 @@ class VenueRepository:
             "is_blocked": venue.is_blocked,
             "venue_city": venue.city,
             "venue_state": venue.state,
+            "is_seat_layout_required": venue.is_seat_layout_required,
         }
         venue_item = {
             "pk": f"VENUE#{venue.id}",
@@ -30,6 +30,7 @@ class VenueRepository:
             "is_blocked": venue.is_blocked,
             "venue_city": venue.city,
             "venue_state": venue.state,
+            "is_seat_layout_required": venue.is_seat_layout_required,
         }
         try:
             self.client.transact_write_items(
@@ -68,9 +69,10 @@ class VenueRepository:
             city=item["venue_city"],
             state=item["venue_state"],
             is_blocked=item["is_blocked"],
+            is_seat_layout_required=item["is_seat_layout_required"],
         )
 
-    def get_host_venues(self, host_id: str):
+    def get_host_venues(self, host_id: str) -> List[Venue]:
         try:
             response = self.table.query(
                 KeyConditionExpression=(
@@ -91,6 +93,7 @@ class VenueRepository:
                 city=item["venue_city"],
                 state=item["venue_state"],
                 is_blocked=item["is_blocked"],
+                is_seat_layout_required=item["is_seat_layout_required"],
             )
             venues.append(venue)
         return venue
@@ -104,9 +107,15 @@ class VenueRepository:
                             "TableName": self.table.name,
                             "Key": {"pk": f"VENUE#{venue_id}", "sk": "DETAILS"},
                             "UpdateExpression": "SET #is_blocked=:new_value",
-                            "ExpressionAttributeNames": {"#is_blocked": "is_blocked"},
-                            "ExpressionAttributeValues": {":new_value": is_blocked},
-                            "ConditionExpression": "attribute_exists(pk)",
+                            "ExpressionAttributeNames": {
+                                "#is_blocked": "is_blocked",
+                                "#host_id": "host_id",
+                            },
+                            "ExpressionAttributeValues": {
+                                ":new_value": is_blocked,
+                                ":host_id": host_id,
+                            },
+                            "ConditionExpression": "attribute_exists(pk) AND #host_id = :host_id",
                         }
                     },
                     {
