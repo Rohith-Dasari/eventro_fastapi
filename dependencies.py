@@ -1,19 +1,23 @@
+from typing import List
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from boto3 import resource
+from functools import lru_cache
+from utils.jwt_service import decode_access_token
+from types_boto3_dynamodb.service_resource import Table
+
 from repository.user_repository import UserRepository
 from repository.event_repository import EventRepository
 from repository.artist_repository import ArtistRepository
 from repository.venue_repository import VenueRepository
-from typing import List
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from utils.jwt_service import decode_access_token
+from repository.show_repository import ShowRepository
+
 from services.event_service import EventService
 from services.artist_service import ArtistService
 from services.user_service import UserService
 from services.venue_service import VenuService
+from services.show_service import ShowService
 
-from boto3 import resource
-from functools import lru_cache
-from types_boto3_dynamodb.service_resource import Table
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -22,6 +26,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 def get_dynamodb_table() -> Table:
     dynamodb = resource("dynamodb")
     return dynamodb.Table("eventro_table")
+
+
+def get_shows_repo(table: Table = Depends(get_dynamodb_table)) -> ShowService:
+    return ShowRepository(table=table)
 
 
 def get_user_repo(table: Table = Depends(get_dynamodb_table)) -> UserRepository:
@@ -42,6 +50,12 @@ def get_venue_repo(
     table: Table = Depends(get_dynamodb_table),
 ) -> VenueRepository:
     return VenueRepository(table=table)
+
+
+def get_shows_service(
+    show_repo: ShowRepository = Depends(get_shows_repo),
+) -> ShowService:
+    return ShowService(show_repo)
 
 
 def get_venue_service(
@@ -90,4 +104,3 @@ def require_roles(allowed_roles: List[str]):
         return current_user
 
     return role_checker
-

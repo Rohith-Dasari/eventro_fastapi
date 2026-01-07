@@ -17,7 +17,7 @@ class VenueRepository:
             "pk": f"USER#{venue.host_id}",
             "sk": f"VENUE#{venue.id}",
             "venue_name": venue.name,
-            "is_blocked": venue.is_blocked,
+            "is_venue_blocked": venue.is_blocked,
             "venue_city": venue.city,
             "venue_state": venue.state,
             "is_seat_layout_required": venue.is_seat_layout_required,
@@ -27,7 +27,7 @@ class VenueRepository:
             "sk": "DETAILS",
             "host_id": venue.host_id,
             "venue_name": venue.name,
-            "is_blocked": venue.is_blocked,
+            "is_venue_blocked": venue.is_blocked,
             "venue_city": venue.city,
             "venue_state": venue.state,
             "is_seat_layout_required": venue.is_seat_layout_required,
@@ -68,7 +68,7 @@ class VenueRepository:
             host_id=item["host_id"],
             city=item["venue_city"],
             state=item["venue_state"],
-            is_blocked=item["is_blocked"],
+            is_blocked=item["is_venue_blocked"],
             is_seat_layout_required=item["is_seat_layout_required"],
         )
 
@@ -92,7 +92,7 @@ class VenueRepository:
                 name=item["venue_name"],
                 city=item["venue_city"],
                 state=item["venue_state"],
-                is_blocked=item["is_blocked"],
+                is_blocked=item["is_venue_blocked"],
                 is_seat_layout_required=item["is_seat_layout_required"],
             )
             venues.append(venue)
@@ -108,7 +108,7 @@ class VenueRepository:
                             "Key": {"pk": f"VENUE#{venue_id}", "sk": "DETAILS"},
                             "UpdateExpression": "SET #is_blocked=:new_value",
                             "ExpressionAttributeNames": {
-                                "#is_blocked": "is_blocked",
+                                "#is_blocked": "is_venue_blocked",
                                 "#host_id": "host_id",
                             },
                             "ExpressionAttributeValues": {
@@ -123,7 +123,9 @@ class VenueRepository:
                             "TableName": self.table.name,
                             "Key": {"pk": f"USER#{host_id}", "sk": f"VENUE#{venue_id}"},
                             "UpdateExpression": "SET #is_blocked=:new_value",
-                            "ExpressionAttributeNames": {"#is_blocked": "is_blocked"},
+                            "ExpressionAttributeNames": {
+                                "#is_blocked": "is_venue_blocked"
+                            },
                             "ExpressionAttributeValues": {":new_value": is_blocked},
                             "ConditionExpression": "attribute_exists(pk)",
                         }

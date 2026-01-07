@@ -15,7 +15,7 @@ async def get_host_venues(
     if user["role"] != "admin":
         if user["user_id"] != host_id:
             raise HTTPException(
-                status_code=401, detail="not authorised to other host's venues"
+                status_code=401, detail=f"not authorised to see host: {host_id} venues"
             )
     venues = venue_service.get_host_venues(host_id=host_id)
     return APIResponse(
