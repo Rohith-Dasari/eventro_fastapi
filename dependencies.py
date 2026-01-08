@@ -11,12 +11,14 @@ from repository.event_repository import EventRepository
 from repository.artist_repository import ArtistRepository
 from repository.venue_repository import VenueRepository
 from repository.show_repository import ShowRepository
+from repository.booking_repository import BookingRepository
 
 from services.event_service import EventService
 from services.artist_service import ArtistService
 from services.user_service import UserService
 from services.venue_service import VenuService
 from services.show_service import ShowService
+from services.booking_service import BookingService
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -26,6 +28,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 def get_dynamodb_table() -> Table:
     dynamodb = resource("dynamodb")
     return dynamodb.Table("eventro_table")
+
+
+def get_booking_repo(table: Table = Depends(get_dynamodb_table)) -> BookingService:
+    return BookingRepository(table=table)
 
 
 def get_shows_repo(table: Table = Depends(get_dynamodb_table)) -> ShowService:
@@ -50,6 +56,12 @@ def get_venue_repo(
     table: Table = Depends(get_dynamodb_table),
 ) -> VenueRepository:
     return VenueRepository(table=table)
+
+
+def get_booking_service(
+    booking_repo: BookingRepository = Depends(get_booking_repo),
+) -> BookingService:
+    return BookingService(booking_repo)
 
 
 def get_shows_service(
