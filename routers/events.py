@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status, Query
-from schemas.event import CreateEventRequest
+from schemas.event import CreateEventRequest, UpdateEventRequest
 from schemas.response import APIResponse
 from services.event_service import EventService
 from dependencies import require_roles, get_event_service, get_current_user
@@ -39,11 +39,25 @@ async def get_event_by_id(
 
 
 @event_router.get("")
-async def get_event_by_name(
-    name: str = Query(..., min_length=1, description="Event name to search"),
+async def browse_events(
+    name: str = Query(description="Event name to search"),
+    city: str = Query(description="Event name to search"),
+    user=Depends(get_current_user),
     event_service: EventService = Depends(get_event_service),
 ):
-    events = event_service.get_event_by_name(name)
+    if user["role"] == "admin" or user["role"] == "host":
+        events = event_service.browse_events(event_name=name)
+    else:
+        events = event_service.browse_events(event_name=name, city=city)
     return APIResponse(status_code=200, message="successfully retrieved", data=events)
 
-#name,city- put eventname in sk prefix, adding in show repo, get in event repo
+
+@event_router.patch("/{event_id}")
+async def update_event(
+    event_id: str,
+    req: UpdateEventRequest,
+    event_service: EventService = Depends(get_event_service),
+    user=Depends(require_roles(["Admin"])),
+):
+    event_service.update_event(event_id, req)
+    return APIResponse(status_code=200, message=f"successfully updated {event_id}")
