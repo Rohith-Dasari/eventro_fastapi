@@ -5,8 +5,10 @@ from types_boto3_dynamodb import DynamoDBClient
 from typing import Optional, List
 from boto3.dynamodb.conditions import Key
 from models.booking import Booking
-from schemas.shows import ShowResponse
+from models.shows import Show
 from models.events import Event
+from models.venue import Venue
+from schemas.booking import BookingResponse
 
 
 class BookingRepository:
@@ -15,7 +17,12 @@ class BookingRepository:
         self.client = table.meta.client
 
     def add_booking(
-        self, booking: Booking, user_id: str, show: ShowResponse, event: Event
+        self,
+        booking: Booking,
+        user_id: str,
+        show: Show,
+        event: Event,
+        venue: Venue,
     ):
         booking_item = {
             "pk": f"USER#{user_id}",
@@ -24,9 +31,9 @@ class BookingRepository:
             "time_booked": booking.time_booked,
             "total_price": booking.total_booking_price,
             "seats": booking.seats,
-            "venue_city": show.venue["city"],
-            "venue_id": show.venue["name"],
-            "venue_state": show.venue["state"],
+            "venue_city": venue.city,
+            "venue_id": venue.name,
+            "venue_state": venue.state,
             "event_name": event.name,
             "event_duration": event.duration,
             "event_id": event.id,
@@ -57,7 +64,7 @@ class BookingRepository:
         except ClientError as e:
             raise
 
-    def get_bookings(self, user_id: str) -> List[Booking]:
+    def get_bookings(self, user_id: str) -> List[BookingResponse]:
         try:
             response = self.table.query(
                 KeyConditionExpression=(
@@ -68,15 +75,24 @@ class BookingRepository:
             if not items:
                 return None
 
-            bookings: List[Booking] = []
+            bookings: List[BookingResponse] = []
             for item in items:
-                booking = Booking(
+                booking = BookingResponse(
                     booking_id=item["sk"].split("#BOOKING#")[-1],
                     user_id=item["pk"].removeprefix("USER#"),
                     show_id=item["show_id"],
                     time_booked=item["time_booked"],
-                    total_booking_price=item["total_price"],
+                    total_price=item["total_price"],
                     seats=item["seats"],
+                    venue_city=item["venue_city"],
+                    venue_name=item["venue_name"],
+                    venue_state=item["venue_state"],
+                    event_name=item["event_name"],
+                    event_duration=item["event_duration"],
+                    event_id=item["event_id"],
+                    booking_date=item["sk"]
+                    .split("#BOOKING#")[0]
+                    .removeprefix("SHOW_DATE#"),
                 )
                 bookings.append(booking)
             return bookings
