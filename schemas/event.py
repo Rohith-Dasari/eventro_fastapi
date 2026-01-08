@@ -9,3 +9,7 @@ class CreateEventRequest(BaseModel):
     duration: int = Field(..., gt=0, description="Duration in minutes")
     category: Category
     artist_ids: List[str] = Field(..., min_length=1, alias="artists")
+
+
+class UpdateEventRequest(BaseModel):
+    is_blocked: bool

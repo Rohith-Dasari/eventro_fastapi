@@ -8,9 +8,6 @@ from boto3.dynamodb.conditions import Key
 
 # update,delete
 
-# get events of host
-# get events by city
-
 
 logger = logging.getLogger(__name__)
 
@@ -110,3 +107,99 @@ class EventRepository:
                 )
             )
         return events
+
+    def get_events_of_host(self, host_id: str) -> List[Event]:
+        prefix = f"EVENT#"
+        try:
+            resp = self.table.query(
+                KeyConditionExpression=Key("pk").eq(f"HOST#{host_id}")
+                & Key("sk").begins_with(prefix)
+            )
+        except ClientError as e:
+            raise
+        event_ids = []
+        items = resp.get("Items", [])
+        for item in items:
+            event_id = item["sk"].split("#")[-1]
+            event_ids.append(event_id)
+        events = self._batch_get_events(event_ids=event_ids)
+        return events
+
+    def _batch_get_events(self, event_ids: List[str]) -> List[Event]:
+        keys = []
+        for event_id in event_ids:
+            keys.append({"pk": f"EVENT#{event_id}", "sk": "DETAILS"})
+
+        request_items = {
+            self.table.name: {
+                "Keys": keys,
+            }
+        }
+        resp = self.client.batch_get_item(RequestItems=request_items)
+        items = resp.get("Responses", {}).get(self.table.name, [])
+        while resp.get("UnprocessedKeys"):
+            resp = self.client.batch_get_item(RequestItems=resp["UnprocessedKeys"])
+            items.extend(resp.get("Responses", {}).get(self.table.name, []))
+        events: Event = []
+        for item in items:
+            events.append(
+                Event(
+                    id=item["pk"].split("#")[1],
+                    name=item.get("event_name", ""),
+                    description=item.get("description", ""),
+                    duration=item.get("duration", 0),
+                    category=item.get("category", ""),
+                    is_blocked=item.get("is_event_blocked", False),
+                    artist_ids=item.get("artist_ids", []),
+                    artist_names=item.get("artist_names", []),
+                )
+            )
+        return events
+
+    def get_events_by_city_and_name(self, name: str, city: str) -> Event:
+        prefix = f"NAME#{name}"
+        try:
+            resp = self.table.query(
+                KeyConditionExpression=Key("pk").eq(f"CITY#{city}")
+                & Key("sk").begins_with(prefix)
+            )
+        except ClientError as e:
+            raise
+        items = resp.get("Items", [])
+        events: Event = []
+        for item in items:
+            events.append(
+                Event(
+                    id=item["sk"].split("ID#")[-1],
+                    name=item["sk"].split("#ID#")[0].removeprefix("NAME#"),
+                    description=item.get("description", ""),
+                    duration=item.get("duration", 0),
+                    category=item.get("category", ""),
+                    is_blocked=item.get("is_event_blocked", False),
+                    artist_ids=item.get("artist_ids", []),
+                    artist_names=item.get("artist_names", []),
+                )
+            )
+        return events
+
+    def update_event(self, event_id: str, is_blocked: bool) -> Event:
+        try:
+            self.client.transact_write_items(
+                TransactItems=[
+                    {
+                        "Update": {
+                            "Key": {"pk": f"EVENT#{event_id}", "sk": "DETAILS"},
+                            "TableName": self.table.name,
+                            "UpdateExpression": "SET #is_blocked=:new_value",
+                            "ExpressionAttributeNames": {
+                                "#is_blocked": "is_event_blocked",
+                            },
+                            "ExpressionAttributeValues": {
+                                ":new_value": is_blocked,
+                            },
+                        }
+                    },
+                ]
+            )
+        except ClientError as e:
+            raise

@@ -3,6 +3,8 @@ from repository.event_repository import EventRepository
 from models.events import Category, Event
 from custom_exceptions.event_exceptions import EventNotFound
 import uuid
+from typing import List
+from schemas.event import UpdateEventRequest
 
 
 class EventService:
@@ -41,8 +43,26 @@ class EventService:
             raise EventNotFound("invalid event id")
         return event
 
-    def get_event_by_name(self, event_name: str) -> Event:
-        events = self.event_repo.get_events_by_name(event_name)
-        if len(events) == 0:
-            raise EventNotFound(f"no events found with {event_name}")
+    def browse_events(self, event_name: str = "", city: str = "") -> Event:
+        if not city:
+            events = self.event_repo.get_events_by_name(event_name)
+        else:
+            events = self.event_repo.get_events_by_city_and_name(
+                name=event_name, city=city
+            )
         return events
+
+    def get_host_events(self, host_id: str) -> List[Event]:
+        events = self.event_repo.get_events_of_host(host_id=host_id)
+        return events
+
+    def update_event(self, event_id: str, update_req: UpdateEventRequest):
+        self.event_repo.update_event(
+            event_id=event_id, is_blocked=update_req.is_blocked
+        )
+
+
+# none present- bad request
+# city presnt name absent -1
+# city absent name present -2
+# both present -1

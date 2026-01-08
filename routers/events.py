@@ -45,3 +45,5 @@ async def get_event_by_name(
 ):
     events = event_service.get_event_by_name(name)
     return APIResponse(status_code=200, message="successfully retrieved", data=events)
+
+#name,city- put eventname in sk prefix, adding in show repo, get in event repo

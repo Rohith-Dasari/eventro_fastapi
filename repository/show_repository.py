@@ -58,13 +58,13 @@ class ShowRepository:
         }
         city_event = {
             "pk": f"CITY#{venue.city}",
-            "sk": f"EVENT#{event.id}",
-            "event_name": event.name,
+            "sk": f"NAME#{event.name}#ID#{event.id}",
             "description": event.description,
             "duration": event.duration,
             "category": event.category,
             "is_event_blocked": event.is_blocked,
             "artist_ids": event.artist_ids,
+            "artist_names": event.artist_names,
             "expires_at": ttl,
         }
         event_shows = {
