@@ -37,19 +37,26 @@ class EventService:
         self.event_repo.add_event(event)
         return event
 
-    def get_event_by_id(self, event_id: str) -> Event:
+    def get_event_by_id(self, event_id: str, user_role) -> Event:
         event = self.event_repo.get_by_id(event_id=event_id)
         if not event:
             raise EventNotFound("invalid event id")
+        if event.is_blocked:
+            if user_role != "admin":
+                raise EventNotFound("invalid event id")
         return event
 
-    def browse_events(self, event_name: str = "", city: str = "") -> Event:
-        if not city:
+    def browse_events(
+        self, user_role: str, event_name: str = "", city: str = ""
+    ) -> Event:
+        if user_role == "admin" or user_role == "host" or not city:
             events = self.event_repo.get_events_by_name(event_name)
         else:
             events = self.event_repo.get_events_by_city_and_name(
                 name=event_name, city=city
             )
+        if user_role == "customer":
+            events = [event for event in events if not event.is_blocked]
         return events
 
     def get_host_events(self, host_id: str) -> List[Event]:

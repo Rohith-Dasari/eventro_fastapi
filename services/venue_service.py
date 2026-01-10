@@ -1,6 +1,7 @@
 from repository.venue_repository import VenueRepository
 from models.venue import Venue
 from schemas.venues import VenueCreateReq
+from custom_exceptions.generic import NotFoundException
 from uuid import uuid4
 from typing import List
 
@@ -25,6 +26,10 @@ class VenuService:
 
     def get_venue_by_id(self, venue_id: str) -> Venue:
         venue = self.venue_repo.get_venue_by_id(venue_id)
+        if not venue:
+            raise NotFoundException(
+                resource="venue", identifier=venue_id, status_code=404
+            )
         return venue
 
     def get_host_venues(self, host_id: str) -> List[Venue]:
@@ -36,3 +41,4 @@ class VenuService:
 
     def delete_venue(self, venue_id: str, host_id: str):
         self.venue_repo.delete_venue(venue_id, host_id)
+    

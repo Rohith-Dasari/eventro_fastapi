@@ -3,6 +3,7 @@ from schemas.event import CreateEventRequest, UpdateEventRequest
 from schemas.response import APIResponse
 from services.event_service import EventService
 from dependencies import require_roles, get_event_service, get_current_user
+from typing import Optional, Annotated
 
 event_router = APIRouter(
     prefix="/events", tags=["events"], dependencies=[Depends(get_current_user)]
@@ -33,22 +34,22 @@ async def create_event(
 async def get_event_by_id(
     event_id: str,
     event_service: EventService = Depends(get_event_service),
+    user=Depends(get_current_user),
 ):
-    event = event_service.get_event_by_id(event_id)
+    event = event_service.get_event_by_id(event_id, user["role"])
     return APIResponse(status_code=200, message="successfully retrieved", data=event)
 
 
 @event_router.get("")
 async def browse_events(
-    name: str = Query(description="Event name to search"),
-    city: str = Query(description="Event name to search"),
+    name: Annotated[Optional[str], Query(description="Event name to search")] = "",
+    city: Annotated[Optional[str], Query(description="Event city to search")] = "",
     user=Depends(get_current_user),
     event_service: EventService = Depends(get_event_service),
 ):
-    if user["role"] == "admin" or user["role"] == "host":
-        events = event_service.browse_events(event_name=name)
-    else:
-        events = event_service.browse_events(event_name=name, city=city)
+    events = event_service.browse_events(
+        event_name=name, city=city, user_role=user["role"]
+    )
     return APIResponse(status_code=200, message="successfully retrieved", data=events)
 
 
@@ -57,7 +58,7 @@ async def update_event(
     event_id: str,
     req: UpdateEventRequest,
     event_service: EventService = Depends(get_event_service),
-    user=Depends(require_roles(["Admin"])),
+    user=Depends(require_roles(["admin"])),
 ):
     event_service.update_event(event_id, req)
     return APIResponse(status_code=200, message=f"successfully updated {event_id}")

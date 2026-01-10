@@ -16,7 +16,7 @@ hosts_router = APIRouter(prefix="/hosts", tags=["host"])
 async def get_host_venues(
     host_id: str,
     venue_service: VenuService = Depends(get_venue_service),
-    user=Depends(require_roles["host", "admin"]),
+    user=Depends(require_roles(["host", "admin"])),
 ):
     if user["role"] != "admin":
         if user["user_id"] != host_id:
@@ -35,7 +35,7 @@ async def get_host_venues(
 async def get_host_shows(
     host_id: str,
     event_service: EventService = Depends(get_event_service),
-    user=Depends(require_roles["host", "admin"]),
+    user=Depends(require_roles(["host", "admin"])),
 ):
     if user["role"] != "admin":
         if user["user_id"] != host_id:

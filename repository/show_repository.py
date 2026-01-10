@@ -8,36 +8,30 @@ import logging
 from boto3.dynamodb.conditions import Key
 from typing import List, Optional
 from datetime import datetime
-
-logger = logging.getLogger(__name__)
 from zoneinfo import ZoneInfo
 
-
-# create
-# get show by id
-# list by event
-# update
+logger = logging.getLogger(__name__)
 
 
-# todo:
-# update show booking booking chesinappudu
 class ShowRepository:
     def __init__(self, table: Table, client: DynamoDBClient = None):
         self.table = table
         self.client = client if client else table.meta.client
 
     def _to_ddb_ttl(date_str: str, time_str: str, tz="Asia/Kolkata") -> int:
-        dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M").replace(
-            tzinfo=ZoneInfo(tz)
+        naive = datetime.strptime(
+            f"{date_str} {time_str}",
+            "%Y-%m-%d %H:%M",
         )
-
-        return int(dt.timestamp())
+        aware = naive.replace(tzinfo=ZoneInfo(tz))
+        return int(aware.timestamp())
 
     def create_show(self, show: Show, venue: Venue, event: Event):
         if event.is_blocked:
             raise Exception("cant add show to blocked event")
 
-        ttl = self._to_ddb_ttl(show.date, show.show_time)
+        # ttl = self._to_ddb_ttl(show.show_date, show.show_time)
+        ttl = 1
         show_item = {
             "pk": f"SHOW#{show.id}",
             "sk": f"DETAILS",
@@ -86,19 +80,25 @@ class ShowRepository:
                             "TableName": self.table.name,
                             "Item": show_item,
                         },
+                    },
+                    {
                         "Put": {
                             "TableName": self.table.name,
                             "Item": event_shows,
                         },
+                    },
+                    {
                         "Put": {
                             "TableName": self.table.name,
                             "Item": city_event,
                         },
+                    },
+                    {
                         "Put": {
                             "TableName": self.table.name,
                             "Item": host_event,
                         },
-                    }
+                    },
                 ]
             )
         except ClientError as e:
@@ -107,7 +107,7 @@ class ShowRepository:
     def get_show_by_id(self, show_id: str) -> Optional[Show]:
         try:
             response = self.table.get_item(
-                Key={"pk": f"SHOW{show_id}", "sk": "DETAILS"}
+                Key={"pk": f"SHOW#{show_id}", "sk": "DETAILS"}
             )
         except ClientError as err:
             logger.error(f"Error retrieving show by id {show_id}: {err}")
@@ -118,9 +118,8 @@ class ShowRepository:
 
         return Show(
             id=item["pk"].split("#", 1)[1],
-            host_id=item["host_id"],
             venue_id=item["venue_id"],
-            event_id=item["venue"],
+            event_id=item["event_id"],
             is_blocked=item["is_show_blocked"],
             price=item["price"],
             show_date=item["show_date"],

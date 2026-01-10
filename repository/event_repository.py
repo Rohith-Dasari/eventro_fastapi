@@ -94,10 +94,11 @@ class EventRepository:
 
         events = []
         for item in items:
+            event_name = item["sk"].split("#EVENT_ID#")[0].removeprefix("EVENT_NAME#")
             events.append(
                 Event(
                     id=item["sk"].split("#")[-1],
-                    name=item.get("event_name", ""),
+                    name=event_name,
                     description=item.get("description", ""),
                     duration=item.get("duration", 0),
                     category=item.get("category", ""),
@@ -119,6 +120,8 @@ class EventRepository:
             raise
         event_ids = []
         items = resp.get("Items", [])
+        if not items:
+            return []
         for item in items:
             event_id = item["sk"].split("#")[-1]
             event_ids.append(event_id)
@@ -197,6 +200,7 @@ class EventRepository:
                             "ExpressionAttributeValues": {
                                 ":new_value": is_blocked,
                             },
+                            "ConditionExpression": "attribute_exists(pk)",
                         }
                     },
                 ]

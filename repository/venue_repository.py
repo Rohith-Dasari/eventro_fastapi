@@ -52,10 +52,10 @@ class VenueRepository:
         except ClientError as e:
             pass
 
-    def get_venue_by_id(self, venue_id: str):
+    def get_venue_by_id(self, venue_id: str)->Optional[Venue]:
         try:
             response = self.table.get_item(
-                Key={"pk": f"VENUE#{venue_id}", "sk": f"DETAILS"}
+                Key={"pk": f"VENUE#{venue_id}", "sk": f"DETAILS"},
             )
         except ClientError as err:
             raise
@@ -83,7 +83,7 @@ class VenueRepository:
             raise
         items = response.get("Items", [])
         if not items:
-            return None
+            return []
         venues = []
         for item in items:
             venue = Venue(
@@ -142,18 +142,22 @@ class VenueRepository:
                 TransactItems=[
                     {
                         "Delete": {
+                            "TableName": self.table.name,
                             "Key": {
                                 "pk": f"VENUE#{venue_id}",
                                 "sk": f"DETAILS",
-                            }
+                            },
+                            "ConditionExpression": "attribute_exists(pk)",
                         },
                     },
                     {
                         "Delete": {
+                            "TableName": self.table.name,
                             "Key": {
                                 "pk": f"USER#{host_id}",
                                 "sk": f"VENUE#{venue_id}",
-                            }
+                                "ConditionExpression": "attribute_exists(pk)",
+                            },
                         },
                     },
                 ]

@@ -66,8 +66,12 @@ def get_booking_service(
 
 def get_shows_service(
     show_repo: ShowRepository = Depends(get_shows_repo),
+    event_repo: EventRepository = Depends(get_event_repo),
+    venue_repo: VenueRepository = Depends(get_venue_repo),
 ) -> ShowService:
-    return ShowService(show_repo)
+    return ShowService(
+        show_repo=show_repo, venue_repo=venue_repo, event_repo=event_repo
+    )
 
 
 def get_venue_service(

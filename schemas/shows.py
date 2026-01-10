@@ -28,9 +28,10 @@ class ShowResponse(BaseModel):
     show_date: str
     show_time: str
     booked_seats: List
-    venue: Dict[VenuDTO]
+    venue: VenuDTO
     is_blocked: bool
     host_id: str
+
 
 """{
             "id": "12b6e6b3-c8db-4b69-9d89-975894fd66c1",

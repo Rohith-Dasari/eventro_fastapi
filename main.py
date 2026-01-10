@@ -4,6 +4,7 @@ from routers.events import event_router
 from routers.artists import artist_router
 from routers.venues import venue_router
 from routers.host import hosts_router
+from routers.shows import shows_router
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -12,6 +13,7 @@ from custom_exceptions.user_exceptions import (
     UserAlreadyExists,
     IncorrectCredentials,
 )
+from custom_exceptions.generic import NotFoundException
 from custom_exceptions.artist_exceptions import InvalidArtistID
 from custom_exceptions.event_exceptions import EventNotFound
 from botocore.exceptions import ClientError
@@ -23,6 +25,7 @@ app.include_router(router=event_router)
 app.include_router(router=artist_router)
 app.include_router(router=venue_router)
 app.include_router(router=hosts_router)
+app.include_router(router=shows_router)
 
 
 @app.exception_handler(HTTPException)
@@ -54,6 +57,17 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
         content={
             "status_code": 422,
             "message": str(exc),
+        },
+    )
+
+
+@app.exception_handler(NotFoundException)
+async def not_found_handler(request: Request, exc: NotFoundException):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "status_code": exc.status_code,
+            "message": f"{exc.resource} {exc.identifier} not found",
         },
     )
 
