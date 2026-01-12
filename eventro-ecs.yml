@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Eventro FastAPI ECS Fargate Service (Public ALB, DynamoDB)
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-xxxxxxxx
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet::Id
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+
+  # ---------------- IAM ROLES ----------------
+
+  EventroExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  EventroTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EventroDynamoDBAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:*
+                Resource: "*"
+
+  # ---------------- ECS ----------------
+
+  EventroCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: eventro-cluster
+
+  EventroLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/eventro
+      RetentionInDays: 7
+
+  EventroTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: eventro-api
+      Cpu: "512"
+      Memory: "1024"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt EventroExecutionRole.Arn
+      TaskRoleArn: !GetAtt EventroTaskRole.Arn
+      ContainerDefinitions:
+        - Name: eventro-api
+          Image: 961341531249.dkr.ecr.ap-south-1.amazonaws.com/eventro-api:latest
+          PortMappings:
+            - ContainerPort: 8000
+          Environment:
+            - Name: AWS_REGION
+              Value: ap-south-1
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/eventro
+              awslogs-region: ap-south-1
+              awslogs-stream-prefix: ecs
+
+  # ---------------- ALB ----------------
+
+  EventroALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  EventroALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref EventroALBSecurityGroup
+
+  EventroTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      Port: 8000
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckPath: /health
+
+  EventroListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref EventroALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref EventroTargetGroup
+
+  # ---------------- ECS SERVICE ----------------
+
+  EventroService:
+    Type: AWS::ECS::Service
+    DependsOn: EventroListener
+    Properties:
+      Cluster: !Ref EventroCluster
+      LaunchType: FARGATE
+      DesiredCount: 2
+      TaskDefinition: !Ref EventroTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnet1
+            - !Ref PublicSubnet2
+          SecurityGroups:
+            - !Ref EventroALBSecurityGroup
+      LoadBalancers:
+        - ContainerName: eventro-api
+          ContainerPort: 8000
+          TargetGroupArn: !Ref EventroTargetGroup
+
+Outputs:
+  LoadBalancerURL:
+    Description: Public URL of Eventro API
+    Value: !GetAtt EventroALB.DNSName
+
+# aws cloudformation deploy `
+#   --stack-name eventro-ecs `
+#   --template-file eventro-ecs.yaml `
+#   --capabilities CAPABILITY_NAMED_IAM `
+#   --parameter-overrides `
+#     VpcId=vpc-xxxxxxxx `
+#     PublicSubnet1=subnet-aaaa `
+#     PublicSubnet2=subnet-bbbb

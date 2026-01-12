@@ -1,0 +1,11 @@
+Resources:
+  EventroApiRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: eventro-api
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      
+Outputs:
+  EventroApiRepoUri:
+    Value: !GetAtt EventroApiRepo.RepositoryUri

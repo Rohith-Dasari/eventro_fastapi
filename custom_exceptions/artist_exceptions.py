@@ -1,2 +1,0 @@
-class InvalidArtistID(Exception):
-    pass

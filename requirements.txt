@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-jose[cryptography]
+boto3
+pydantic
+email-validator
+bcrypt
+types-boto3-dynamodb
+
+# pytest
+# pytest-asyncio
+# pytest-cov
+# coverage
