@@ -1,4 +1,4 @@
-from models.users import User, Role
+from app.models.users import User, Role
 from botocore.exceptions import ClientError
 import logging
 from types_boto3_dynamodb.service_resource import Table

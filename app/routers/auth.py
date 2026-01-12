@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
-from schemas.auth import SignupRequest, LoginRequest
-from schemas.response import APIResponse
-from services.user_service import UserService
+from app.schemas.auth import SignupRequest, LoginRequest
+from app.schemas.response import APIResponse
+from app.services.user_service import UserService
 from typing import Annotated
-from dependencies import get_user_service
+from app.dependencies import get_user_service
 
 auth_router = APIRouter(tags=["auth"])
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]

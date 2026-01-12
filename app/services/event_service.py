@@ -1,11 +1,11 @@
-from services.artist_service import ArtistService
-from repository.event_repository import EventRepository
-from models.events import Category, Event
-from custom_exceptions.generic import NotFoundException
+from app.services.artist_service import ArtistService
+from app.repository.event_repository import EventRepository
+from app.models.events import Category, Event
+from app.custom_exceptions.generic import NotFoundException
 import uuid
-from typing import List,Optional
-from schemas.event import UpdateEventRequest
-from models.users import Role
+from typing import List, Optional
+from app.schemas.event import UpdateEventRequest
+from app.models.users import Role
 
 
 class EventService:
@@ -48,30 +48,33 @@ class EventService:
         return event
 
     def browse_events_by_city(
-        self, city: Optional[str] = None, is_blocked: Optional[bool] = None, user_role: str=""
+        self,
+        city: Optional[str] = None,
+        is_blocked: Optional[bool] = None,
+        user_role: str = "",
     ) -> List[Event]:
-        events = self.event_repo.get_events_by_city_and_name(
-             city=city
-        )
-        if user_role != Role.ADMIN.value or is_blocked==False:
+        events = self.event_repo.get_events_by_city_and_name(city=city)
+        if user_role != Role.ADMIN.value or is_blocked == False:
             events = [event for event in events if not event.is_blocked]
-        elif user_role == Role.ADMIN.value and is_blocked==True:
+        elif user_role == Role.ADMIN.value and is_blocked == True:
             events = [event for event in events if event.is_blocked]
         return events
-    
+
     def browse_events_by_name(
-        self, user_role: str, event_name: Optional[str] = None, city: Optional[str] = None
+        self,
+        user_role: str,
+        event_name: Optional[str] = None,
+        city: Optional[str] = None,
     ) -> List[Event]:
-        if city==None or user_role!=Role.CUSTOMER.value:
+        if city == None or user_role != Role.CUSTOMER.value:
             events = self.event_repo.get_events_by_name(event_name)
-        elif city!=None and user_role==Role.CUSTOMER.value:
+        elif city != None and user_role == Role.CUSTOMER.value:
             events = self.event_repo.get_events_by_city_and_name(
-                    name=event_name, city=city
-                )
+                name=event_name, city=city
+            )
         if user_role != Role.ADMIN.value:
             events = [event for event in events if not event.is_blocked]
         return events
-        
 
     def get_host_events(self, host_id: str) -> List[Event]:
         events = self.event_repo.get_events_of_host(host_id=host_id)
@@ -81,5 +84,3 @@ class EventService:
         self.event_repo.update_event(
             event_id=event_id, is_blocked=update_req.is_blocked
         )
-
-

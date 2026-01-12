@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, status, Query
-from schemas.event import CreateEventRequest, UpdateEventRequest
-from schemas.response import APIResponse
-from services.event_service import EventService
-from dependencies import require_roles, get_event_service, get_current_user
+from app.schemas.event import CreateEventRequest, UpdateEventRequest
+from app.schemas.response import APIResponse
+from app.services.event_service import EventService
+from app.dependencies import require_roles, get_event_service, get_current_user
 from typing import Optional, Annotated
 
 event_router = APIRouter(

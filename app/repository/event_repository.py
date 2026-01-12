@@ -1,4 +1,4 @@
-from models.events import Event
+from app.models.events import Event
 from botocore.exceptions import ClientError
 import logging
 from types_boto3_dynamodb.service_resource import Table

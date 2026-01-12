@@ -3,9 +3,9 @@ import pytest
 from botocore.exceptions import ClientError
 
 from app.repository.show_repository import ShowRepository
-from models.shows import Show
-from models.venue import Venue
-from models.events import Event
+from app.models.shows import Show
+from app.models.venue import Venue
+from app.models.events import Event
 from datetime import datetime, timezone
 
 

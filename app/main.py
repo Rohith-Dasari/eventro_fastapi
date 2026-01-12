@@ -4,41 +4,44 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from routers.auth import auth_router
-from routers.events import event_router
-from routers.artists import artist_router
-from routers.venues import venue_router
-from routers.hosts import hosts_router
-from routers.shows import shows_router
-from routers.users import users_router
-from routers.bookings import bookings_router
+from app.routers.auth import auth_router
+from app.routers.events import event_router
+from app.routers.artists import artist_router
+from app.routers.venues import venue_router
+from app.routers.hosts import hosts_router
+from app.routers.shows import shows_router
+from app.routers.users import users_router
+from app.routers.bookings import bookings_router
 
-from custom_exceptions.user_exceptions import (
+from app.custom_exceptions.user_exceptions import (
     UserAlreadyExists,
     IncorrectCredentials,
+    UserBlocked,
 )
-from custom_exceptions.generic import NotFoundException
+from app.custom_exceptions.generic import NotFoundException, BlockedResource
+from app.custom_exceptions.booking_exceptions import SeatAlreadyBookedException
 from botocore.exceptions import ClientError
 
 from boto3 import resource
 
-from repository.user_repository import UserRepository
-from repository.event_repository import EventRepository
-from repository.artist_repository import ArtistRepository
-from repository.venue_repository import VenueRepository
-from repository.show_repository import ShowRepository
-from repository.booking_repository import BookingRepository
+from app.repository.user_repository import UserRepository
+from app.repository.event_repository import EventRepository
+from app.repository.artist_repository import ArtistRepository
+from app.repository.venue_repository import VenueRepository
+from app.repository.show_repository import ShowRepository
+from app.repository.booking_repository import BookingRepository
 
-from services.event_service import EventService
-from services.artist_service import ArtistService
-from services.user_service import UserService
-from services.venue_service import VenuService
-from services.show_service import ShowService
-from services.booking_service import BookingService
+from app.services.event_service import EventService
+from app.services.artist_service import ArtistService
+from app.services.user_service import UserService
+from app.services.venue_service import VenuService
+from app.services.show_service import ShowService
+from app.services.booking_service import BookingService
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    
+
     dynamodb = resource("dynamodb", region_name="ap-south-1")
     table = dynamodb.Table("eventro_table")
 
@@ -69,6 +72,7 @@ async def lifespan(app: FastAPI):
     )
 
     yield
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -123,6 +127,28 @@ async def not_found_handler(request: Request, exc: NotFoundException):
     )
 
 
+@app.exception_handler(BlockedResource)
+async def blocked_resource_handler(request: Request, exc: NotFoundException):
+    return JSONResponse(
+        status_code=403,
+        content={
+            "status_code": exc.status_code,
+            "message": f"{exc.resource} {exc.identifier} can't be accessed",
+        },
+    )
+
+
+@app.exception_handler(SeatAlreadyBookedException)
+async def seat_already_booked_handler(request: Request, exc: NotFoundException):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "status_code": 400,
+            "message": str(exc),
+        },
+    )
+
+
 @app.exception_handler(ValueError)
 def value_error_handler(request: Request, exc: ValueError):
     return JSONResponse(
@@ -133,6 +159,16 @@ def value_error_handler(request: Request, exc: ValueError):
         },
     )
 
+
+@app.exception_handler(UserBlocked)
+def user_blocked_error_handler(request: Request, exc: UserBlocked):
+    return JSONResponse(
+        status_code=403,
+        content={
+            "status_code": 403,
+            "message": str(exc),
+        },
+    )
 
 
 @app.exception_handler(UserAlreadyExists)

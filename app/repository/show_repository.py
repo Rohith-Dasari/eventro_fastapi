@@ -1,9 +1,9 @@
 from types_boto3_dynamodb.service_resource import Table
 from types_boto3_dynamodb import DynamoDBClient
 from botocore.exceptions import ClientError
-from models.shows import Show
-from models.venue import Venue
-from models.events import Event
+from app.models.shows import Show
+from app.models.venue import Venue
+from app.models.events import Event
 import logging
 from boto3.dynamodb.conditions import Key
 from typing import List, Optional

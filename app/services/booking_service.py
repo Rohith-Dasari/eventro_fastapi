@@ -1,11 +1,13 @@
-from repository.booking_repository import BookingRepository
-from repository.show_repository import ShowRepository
-from repository.event_repository import EventRepository
-from repository.venue_repository import VenueRepository
+from app.repository.booking_repository import BookingRepository
+from app.repository.show_repository import ShowRepository
+from app.repository.event_repository import EventRepository
+from app.repository.venue_repository import VenueRepository
 from uuid import uuid4
-from schemas.booking import BookingReq, BookingResponse
-from models.booking import Booking
+from app.schemas.booking import BookingReq, BookingResponse
+from app.models.booking import Booking
 from typing import List
+from app.custom_exceptions.generic import BlockedResource
+from app.custom_exceptions.booking_exceptions import SeatAlreadyBookedException
 
 
 class BookingService:
@@ -25,17 +27,23 @@ class BookingService:
 
         show = self.show_repo.get_show_by_id(show_id=req.show_id)
         if show.is_blocked:
-            pass
+            raise BlockedResource(resource="show", identifier=show.id, status_code=403)
         booked_seats = set(show.booked_seats)
         requested_seats = set(req.seats)
         if booked_seats.intersection(requested_seats):
-            raise Exception(f" {booked_seats.intersection(requested_seats)} seats already booked")
+            raise SeatAlreadyBookedException(
+                f" {booked_seats.intersection(requested_seats)} seats already booked"
+            )
         event = self.event_repo.get_by_id(event_id=show.event_id)
         if event.is_blocked:
-            pass
+            raise BlockedResource(
+                resource="event", identifier=event.id, status_code=403
+            )
         venue = self.venue_repo.get_venue_by_id(venue_id=show.venue_id)
         if venue.is_blocked:
-            pass
+            raise BlockedResource(
+                resource="venue", identifier=venue.id, status_code=403
+            )
         booking_id = str(uuid4())
         current_time = ""
         total_price = len(req.seats) * show.price

@@ -1,16 +1,17 @@
 from typing import Optional, Protocol
-from models.users import User, Role
-from repository.user_repository import UserRepository
-from custom_exceptions.user_exceptions import (
+from app.models.users import User, Role
+from app.repository.user_repository import UserRepository
+from app.custom_exceptions.user_exceptions import (
     IncorrectCredentials,
     UserAlreadyExists,
+    UserBlocked,
 )
-from custom_exceptions.generic import NotFoundException
+from app.custom_exceptions.generic import NotFoundException
 import bcrypt
 import re
 import uuid
-from utils.jwt_service import create_jwt
-from schemas.users import UserProfile
+from app.utils.jwt_service import create_jwt
+from app.schemas.users import UserProfile
 
 PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$")
 
@@ -22,7 +23,9 @@ class UserService:
     def get_user_by_id(self, user_id: str):
         user = self.user_repo.get_by_id(user_id=user_id)
         if user is None:
-            raise NotFoundException(resource="user", identifier=user_id, status_code=404)
+            raise NotFoundException(
+                resource="user", identifier=user_id, status_code=404
+            )
         return user
 
     def get_user_profile(self, user_id: str) -> UserProfile:
@@ -37,6 +40,8 @@ class UserService:
 
     def login(self, email: str, password: str) -> str:
         user = self.get_user_by_mail(email)
+        if user.is_blocked:
+            raise UserBlocked("user has been blocked, contact admin")
 
         if not bcrypt.checkpw(
             password.encode("utf-8"),

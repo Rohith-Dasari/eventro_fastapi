@@ -1,5 +1,5 @@
 from typing import Optional
-from models.artists import Artist
+from app.models.artists import Artist
 from typing import Dict, List, Optional
 import time
 from types_boto3_dynamodb.service_resource import Table

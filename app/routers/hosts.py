@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from services.venue_service import VenuService
-from services.event_service import EventService
-from dependencies import (
+from app.services.venue_service import VenuService
+from app.services.event_service import EventService
+from app.dependencies import (
     get_venue_service,
     require_roles,
     get_event_service,
 )
-from schemas.response import APIResponse
+from app.schemas.response import APIResponse
 from typing import Optional
 
 

@@ -1,14 +1,13 @@
-from dependencies import get_user_service, get_current_user, require_roles
+from app.dependencies import get_user_service, get_current_user, require_roles
 from fastapi import APIRouter, Depends
-from schemas.booking import BookingReq, BookingResponse
-from schemas.response import APIResponse
-from services.user_service import UserService
-from services.booking_service import BookingService
-from dependencies import get_booking_service
-
+from app.schemas.response import APIResponse
+from app.services.user_service import UserService
+from app.services.booking_service import BookingService
+from app.dependencies import get_booking_service
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
+
 
 @users_router.get("/{user_id}")
 def get_user_profile(
@@ -17,8 +16,10 @@ def get_user_profile(
 ):
     user = userService.get_user_profile(user["user_id"])
     return APIResponse(
-        status_code=201, message="succesfully retrieved user bookings", data=user
+        status_code=200, message="succesfully retrieved user bookings", data=user
     )
+
+
 @users_router.get("/{user_id}/bookings")
 def get_bookings(
     user=Depends(get_current_user),
@@ -26,5 +27,5 @@ def get_bookings(
 ):
     bookings = booking_service.get_user_bookings(user["user_id"])
     return APIResponse(
-        status_code=201, message="succesfully retrieved user bookings", data=bookings
+        status_code=200, message="succesfully retrieved user bookings", data=bookings
     )

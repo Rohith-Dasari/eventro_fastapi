@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.repository.artist_repository import ArtistRepository
-from models.artists import Artist
+from app.models.artists import Artist
 
 
 def make_table_mock():
@@ -36,7 +36,9 @@ def test_get_by_id_missing_returns_none():
     artist = repo.get_by_id("missing")
 
     assert artist is None
-    table.get_item.assert_called_once_with(Key={"pk": "ARTIST#missing", "sk": "DETAILS"})
+    table.get_item.assert_called_once_with(
+        Key={"pk": "ARTIST#missing", "sk": "DETAILS"}
+    )
 
 
 def test_batch_get_by_ids_returns_map():

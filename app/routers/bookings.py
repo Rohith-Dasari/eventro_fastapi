@@ -1,8 +1,8 @@
-from dependencies import get_booking_service, get_current_user, require_roles
+from app.dependencies import get_booking_service, get_current_user, require_roles
 from fastapi import APIRouter, Depends
-from schemas.booking import BookingReq, BookingResponse
-from schemas.response import APIResponse
-from services.booking_service import BookingService
+from app.schemas.booking import BookingReq, BookingResponse
+from app.schemas.response import APIResponse
+from app.services.booking_service import BookingService
 
 bookings_router = APIRouter(prefix="/bookings", tags=["bookings"])
 

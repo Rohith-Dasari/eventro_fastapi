@@ -3,7 +3,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from app.repository.user_repository import UserRepository
-from models.users import User, Role
+from app.models.users import User, Role
 
 
 def make_table_mock():

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from typing import Annotated
-from services.venue_service import VenuService
-from schemas.venues import VenueCreateReq, VenueUpdateReq
-from dependencies import get_venue_service, require_roles, get_current_user
-from schemas.response import APIResponse
+from app.services.venue_service import VenuService
+from app.schemas.venues import VenueCreateReq, VenueUpdateReq
+from app.dependencies import get_venue_service, require_roles, get_current_user
+from app.schemas.response import APIResponse
 
 
 venue_router = APIRouter(

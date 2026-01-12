@@ -1,0 +1,2 @@
+class SeatAlreadyBookedException(Exception):
+    pass

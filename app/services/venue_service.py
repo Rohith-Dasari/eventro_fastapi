@@ -1,7 +1,7 @@
-from repository.venue_repository import VenueRepository
-from models.venue import Venue
-from schemas.venues import VenueCreateReq
-from custom_exceptions.generic import NotFoundException
+from app.repository.venue_repository import VenueRepository
+from app.models.venue import Venue
+from app.schemas.venues import VenueCreateReq
+from app.custom_exceptions.generic import NotFoundException
 from uuid import uuid4
 from typing import List,Optional
 

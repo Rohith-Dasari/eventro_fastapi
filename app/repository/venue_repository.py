@@ -1,4 +1,4 @@
-from models.venue import Venue
+from app.models.venue import Venue
 from botocore.exceptions import ClientError
 import logging
 from types_boto3_dynamodb.service_resource import Table

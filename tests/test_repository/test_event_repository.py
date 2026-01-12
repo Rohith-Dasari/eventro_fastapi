@@ -3,7 +3,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from app.repository.event_repository import EventRepository
-from models.events import Event
+from app.models.events import Event
 
 
 def make_table_mock():

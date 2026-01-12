@@ -1,12 +1,12 @@
-from repository.show_repository import ShowRepository
-from repository.venue_repository import VenueRepository
-from repository.event_repository import EventRepository
-from custom_exceptions.generic import NotFoundException
-from schemas.shows import ShowCreateReq, ShowUpdateReq, ShowResponse, VenuDTO
-from models.shows import Show
+from app.repository.show_repository import ShowRepository
+from app.repository.venue_repository import VenueRepository
+from app.repository.event_repository import EventRepository
+from app.custom_exceptions.generic import NotFoundException
+from app.schemas.shows import ShowCreateReq, ShowUpdateReq, ShowResponse, VenuDTO
+from app.models.shows import Show
 from uuid import uuid4
 from typing import Optional
-from models.users import Role
+from app.models.users import Role
 
 
 class ShowService:

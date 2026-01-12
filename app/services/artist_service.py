@@ -1,7 +1,7 @@
-from repository.artist_repository import ArtistRepository
-from models.artists import Artist
+from app.repository.artist_repository import ArtistRepository
+from app.models.artists import Artist
 from typing import Optional, List
-from custom_exceptions.generic import NotFoundException
+from app.custom_exceptions.generic import NotFoundException
 import uuid
 
 

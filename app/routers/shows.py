@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
-from dependencies import get_current_user, get_show_service, require_roles
-from services.show_service import ShowService
+from app.dependencies import get_current_user, get_show_service, require_roles
+from app.services.show_service import ShowService
 from typing import Annotated, Optional
-from schemas.shows import ShowCreateReq, ShowUpdateReq
-from schemas.response import APIResponse
+from app.schemas.shows import ShowCreateReq, ShowUpdateReq
+from app.schemas.response import APIResponse
 
 shows_router = APIRouter(
     prefix="/shows", tags=["shows"], dependencies=[Depends(get_current_user)]

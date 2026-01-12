@@ -1,14 +1,13 @@
 from botocore.exceptions import ClientError
-import logging
 from types_boto3_dynamodb.service_resource import Table
 from types_boto3_dynamodb import DynamoDBClient
 from typing import Optional, List
 from boto3.dynamodb.conditions import Key
-from models.booking import Booking
-from models.shows import Show
-from models.events import Event
-from models.venue import Venue
-from schemas.booking import BookingResponse
+from app.models.booking import Booking
+from app.models.shows import Show
+from app.models.events import Event
+from app.models.venue import Venue
+from app.schemas.booking import BookingResponse
 
 
 class BookingRepository:
@@ -68,7 +67,8 @@ class BookingRepository:
         try:
             response = self.table.query(
                 KeyConditionExpression=(
-                    Key("pk").eq(f"USER#{user_id}") & Key("sk").begins_with("SHOW_DATE#")
+                    Key("pk").eq(f"USER#{user_id}")
+                    & Key("sk").begins_with("SHOW_DATE#")
                 )
             )
             items = response.get("Items", [])
