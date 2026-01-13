@@ -5,7 +5,7 @@ from app.dependencies import (
     get_user_service,
 )
 from fastapi import APIRouter, Depends
-from app.schemas.booking import BookingReq, BookingResponse
+from app.schemas.booking import BookingReq
 from app.schemas.response import APIResponse
 from app.services.booking_service import BookingService
 from app.models.users import Role
@@ -14,7 +14,7 @@ from app.services.user_service import UserService
 bookings_router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
-@bookings_router.post("")
+@bookings_router.post("", status_code=201)
 def create_bookings(
     req: BookingReq,
     current_user=Depends(get_current_user),

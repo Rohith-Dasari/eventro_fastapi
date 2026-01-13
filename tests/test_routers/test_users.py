@@ -33,7 +33,7 @@ class TestUsersRouter(unittest.TestCase):
     def tearDown(self):
         app.dependency_overrides.clear()
 
-    def test_get_user_profile_calls_service(self):
+    def test_get_user_profile_success(self):
         self.mock_user_service.get_user_profile.return_value = {
             "user_id": "u1",
             "name": "Rohith",
@@ -47,6 +47,14 @@ class TestUsersRouter(unittest.TestCase):
         assert body["data"]["user_id"] == "u1"
         self.mock_user_service.get_user_profile.assert_called_once_with("u1")
 
+    def test_get_user_profile_forbidden(self):
+        resp = self.client.get("/users/u2")
+
+        assert resp.status_code == 403
+        assert "not allowed" in resp.text
+
+        self.mock_user_service.get_user_profile.assert_not_called()
+
     def test_get_user_profile_not_found(self):
         self.mock_user_service.get_user_profile.side_effect = NotFoundException(
             resource="user",
@@ -59,7 +67,7 @@ class TestUsersRouter(unittest.TestCase):
         assert resp.status_code == 404
         assert "u1" in resp.text
 
-    def test_get_user_bookings_calls_service(self):
+    def test_get_user_bookings_success(self):
         self.mock_booking_service.get_user_bookings.return_value = [
             {"booking_id": "b1"},
             {"booking_id": "b2"},
@@ -73,6 +81,14 @@ class TestUsersRouter(unittest.TestCase):
         assert len(body["data"]) == 2
         self.mock_booking_service.get_user_bookings.assert_called_once_with("u1")
 
+    def test_get_user_bookings_forbidden(self):
+        resp = self.client.get("/users/u2/bookings")
+
+        assert resp.status_code == 403
+        assert "not allowed" in resp.text
+
+        self.mock_booking_service.get_user_bookings.assert_not_called()
+
     def test_get_user_bookings_empty(self):
         self.mock_booking_service.get_user_bookings.return_value = []
 
@@ -80,3 +96,25 @@ class TestUsersRouter(unittest.TestCase):
 
         assert resp.status_code == 200
         assert resp.json()["data"] == []
+
+    def test_get_user_by_mail_admin(self):
+        app.dependency_overrides[get_current_user] = lambda: {
+            "user_id": "admin1",
+            "role": "admin",
+        }
+
+        self.mock_user_service.get_user_by_mail.return_value = {
+            "user_id": "u99",
+            "email": "user@mail.com",
+        }
+
+        resp = self.client.get("/users/email/user@mail.com")
+
+        assert resp.status_code == 200
+        self.mock_user_service.get_user_by_mail.assert_called_once_with("user@mail.com")
+
+    def test_get_user_by_mail_forbidden_for_non_admin(self):
+        resp = self.client.get("/users/email/user@mail.com")
+
+        assert resp.status_code == 403
+        self.mock_user_service.get_user_by_mail.assert_not_called()
