@@ -26,10 +26,6 @@ Parameters:
     Default: 8000
   DynamoTableName:
     Type: String
-  CorsOrigin:
-    Type: String
-  JwtSecretArn:
-    Type: String
 Resources:
   BackendLogGroup:
     Type: AWS::Logs::LogGroup
@@ -52,14 +48,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-      Policies:
-        - PolicyName: AllowSecrets
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: secretsmanager:GetSecretValue
-                Resource: !Ref JwtSecretArn
+      
   TaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -77,16 +66,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                  - dynamodb:DeleteItem
-                  - dynamodb:Query
-                  - dynamodb:Scan
-                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoTableName}
-              - Effect: Allow
-                Action: secretsmanager:GetSecretValue
-                Resource: !Ref JwtSecretArn
+                  - dynamodb:*
+                Resource: arn:aws:dynamodb:ap-south-1:961341531249:table/eventro_table
+
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -156,15 +138,6 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: DDB_TABLE_NAME
-              Value: !Ref DynamoTableName
-            - Name: JWT_ALGORITHM
-              Value: HS256
-            - Name: CORS_ORIGIN
-              Value: !Ref CorsOrigin
-          Secrets:
-            - Name: JWT_SECRET_KEY
-              ValueFrom: !Sub "${JwtSecretArn}:JWT_SECRET_KEY::"
           HealthCheck:
             Command:
               - CMD-SHELL

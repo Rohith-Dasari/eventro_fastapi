@@ -16,7 +16,7 @@ def get_user_profile(
 ):
     user = userService.get_user_profile(user["user_id"])
     return APIResponse(
-        status_code=200, message="succesfully retrieved user bookings", data=user
+        status_code=200, message="succesfully retrieved user profile", data=user
     )
 
 
@@ -29,3 +29,13 @@ def get_bookings(
     return APIResponse(
         status_code=200, message="succesfully retrieved user bookings", data=bookings
     )
+
+
+@users_router.get("/email/{mail_id}")
+def get_user_by_mail(
+    mail_id: str,
+    user=Depends(require_roles(["admin"])),
+    userService: UserService = Depends(get_user_service),
+):
+    user = userService.get_user_by_mail(mail_id)
+    return APIResponse(status_code=200, message="succesfully user by mail", data=user)

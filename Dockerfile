@@ -14,7 +14,6 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir -r requirements.txt
 
-# Copy the whole project so the `app` package stays intact
 COPY . .
 
 RUN adduser --disabled-password --gecos "" appuser \
