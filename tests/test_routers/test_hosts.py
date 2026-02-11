@@ -80,8 +80,6 @@ class TestHostsRouter(unittest.TestCase):
         assert resp.status_code == 401
         assert "not authorised" in resp.text.lower()
 
-    # -------------------- HOST EVENTS --------------------
-
     def test_get_host_events_as_host(self):
         self.mock_event_service.get_host_events.return_value = [
             {"event_id": "e1"},

@@ -13,7 +13,7 @@ ShowServiceDep = Annotated[ShowService, Depends(get_show_service)]
 
 
 @shows_router.post("", status_code=status.HTTP_201_CREATED)
-async def create_show(
+def create_show(
     req: ShowCreateReq,
     current_user: dict = Depends(require_roles(["host"])),
     show_service: ShowService = Depends(get_show_service),
@@ -60,7 +60,7 @@ def update_show(
     current_user: dict = Depends(require_roles(["host", "admin"])),
     show_service: ShowService = Depends(get_show_service),
 ):
-    show_responses = show_service.update_show(show_id=show_id, req=req)
+    show_service.update_show(show_id=show_id, req=req)
     return APIResponse(
         status_code=200,
         message=f"successfully updated show",

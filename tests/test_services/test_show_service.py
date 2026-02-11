@@ -153,7 +153,6 @@ class TestShowService(unittest.TestCase):
         with self.assertRaises(NotFoundException):
             self.show_service.update_show("missing", ShowUpdateReq(is_blocked=True))
 
-    # -------------------- get_event_shows --------------------
 
     def test_get_event_shows_customer_filters_blocked(self):
         shows = [

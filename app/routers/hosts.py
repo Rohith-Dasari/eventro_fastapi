@@ -14,9 +14,9 @@ hosts_router = APIRouter(prefix="/hosts", tags=["host"])
 
 
 @hosts_router.get("/{host_id}/venues")
-async def get_host_venues(
+def get_host_venues(
     host_id: str,
-    is_blocked: Optional[bool]=None,
+    is_blocked: Optional[bool] = None,
     venue_service: VenuService = Depends(get_venue_service),
     user=Depends(require_roles(["host", "admin"])),
 ):
@@ -25,7 +25,7 @@ async def get_host_venues(
             raise HTTPException(
                 status_code=401, detail=f"not authorised to see host: {host_id} venues"
             )
-    venues = venue_service.get_host_venues(host_id=host_id,is_blocked=is_blocked)
+    venues = venue_service.get_host_venues(host_id=host_id, is_blocked=is_blocked)
     return APIResponse(
         status_code=200,
         message=f"successfully retrieved {host_id}'s venues",
@@ -34,7 +34,7 @@ async def get_host_venues(
 
 
 @hosts_router.get("/{host_id}/events")
-async def get_host_shows(
+def get_host_shows(
     host_id: str,
     event_service: EventService = Depends(get_event_service),
     user=Depends(require_roles(["host", "admin"])),
